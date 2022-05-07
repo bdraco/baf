@@ -18,6 +18,7 @@ PLATFORMS: list[Platform] = [
     Platform.CLIMATE,
     Platform.FAN,
     Platform.LIGHT,
+    Platform.SENSOR,
     Platform.SWITCH,
 ]
 
@@ -37,6 +38,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except asyncio.TimeoutError as ex:
         run_task.cancel()
         raise ConfigEntryNotReady(f"Timed out connecting to {ip_address}") from ex
+
+    # Temporary workaround until the upstream lib is fixed
+    # to ensure we get the name
+    for _ in range(50):
+        if not device.name:
+            await asyncio.sleep(0.1)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = BAFData(device, run_task)
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
